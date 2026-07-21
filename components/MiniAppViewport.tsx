@@ -10,48 +10,63 @@ import {
   type MiniAppRuntimeState
 } from "@/lib/qiankunRuntime";
 import { toShellUser } from "@/lib/shellUser";
+import { useShellNavigation } from "@/components/ShellNavigationContext";
 
 export function MiniAppViewport({ appCode }: { appCode: string }) {
   const { getAccessTokenSilently, user: auth0User } = useAuth0();
+  const { shellBridge } = useShellNavigation();
   const user = useMemo(() => toShellUser(auth0User), [auth0User]);
   const app = getMiniAppByCode(appCode);
   const microAppRef = useRef<MicroApp | null>(null);
+  const mountRunIdRef = useRef(0);
   const [runtimeState, setRuntimeState] =
     useState<MiniAppRuntimeState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!app) {
-      setRuntimeState("error");
-      setErrorMessage(`Mini app "${appCode}" is not active or registered.`);
-      return;
-    }
-
-    const registeredApp = app;
+    const runId = mountRunIdRef.current + 1;
+    mountRunIdRef.current = runId;
     let disposed = false;
+    let mountedReconcileTimer: number | undefined;
 
-    if (registeredApp.standaloneFallback) {
-      // The deployed Todo app is currently a standalone Vite app. Loading it
-      // through Qiankun executes its host-relative router before lifecycle
-      // validation fails, which can push paths like /tasks into the shell.
-      setRuntimeState("standalone");
-      setErrorMessage(null);
-      return;
-    }
-
+    const isCurrentRun = () => !disposed && mountRunIdRef.current === runId;
+    const setCurrentRuntimeState = (state: MiniAppRuntimeState) => {
+      if (isCurrentRun()) {
+        setRuntimeState(state);
+      }
+    };
     const handleRuntimeError = (error: unknown) => {
+      if (!isCurrentRun()) {
+        return;
+      }
+
       const message = formatError(error);
 
       setRuntimeState("error");
       setErrorMessage(message);
     };
 
+    if (!app) {
+      handleRuntimeError(`Mini app "${appCode}" is not active or registered.`);
+      return;
+    }
+
+    const registeredApp = app;
+    setRuntimeState("loading");
+    setErrorMessage(null);
+
+    if (registeredApp.standaloneFallback) {
+      // The deployed Todo app is currently a standalone Vite app. Loading it
+      // through Qiankun executes its host-relative router before lifecycle
+      // validation fails, which can push paths like /tasks into the shell.
+      setCurrentRuntimeState("standalone");
+      return;
+    }
+
     async function bootMiniApp() {
       try {
         await ensureQiankunErrorHandler((error) => {
-          if (!disposed) {
-            handleRuntimeError(error);
-          }
+          handleRuntimeError(error);
         });
 
         // Props are passed through Qiankun's mount channel to keep launch tokens
@@ -65,35 +80,49 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
           registeredApp,
           user,
           token,
+          shellBridge,
           {
             onStateChange: (state) => {
-              if (!disposed) {
-                setRuntimeState(state);
-              }
+              setCurrentRuntimeState(state);
             },
             onError: (error) => {
-              if (!disposed) {
-                handleRuntimeError(error);
-              }
+              handleRuntimeError(error);
             }
           }
         );
 
-        if (disposed) {
+        if (!isCurrentRun()) {
           await microApp.unmount();
           return;
         }
 
         microAppRef.current = microApp;
-        microApp.mountPromise?.catch((error) => {
-          if (!disposed) {
+
+        // Qiankun lifecycle callbacks can race with a previous unmount when a
+        // user switches routes quickly. The mount promise is a second source of
+        // truth so the shell does not leave a rendered mini app under a loading
+        // overlay after a remount.
+        microApp.mountPromise
+          ?.then(() => {
+            setCurrentRuntimeState("mounted");
+          })
+          .catch((error) => {
             handleRuntimeError(error);
+          });
+
+        mountedReconcileTimer = window.setTimeout(() => {
+          const container = document.querySelector(registeredApp.container);
+
+          if (container?.childElementCount) {
+            setRuntimeState((state) =>
+              isCurrentRun() && (state === "idle" || state === "loading")
+                ? "mounted"
+                : state
+            );
           }
-        });
+        }, 1200);
       } catch (error) {
-        if (!disposed) {
-          handleRuntimeError(error);
-        }
+        handleRuntimeError(error);
       }
     }
 
@@ -101,6 +130,7 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
 
     return () => {
       disposed = true;
+      window.clearTimeout(mountedReconcileTimer);
       microAppRef.current
         ?.unmount()
         .catch((error) =>
@@ -108,7 +138,7 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
         );
       microAppRef.current = null;
     };
-  }, [app, appCode, getAccessTokenSilently, user]);
+  }, [app, appCode, getAccessTokenSilently, shellBridge, user]);
 
   const isLoading = runtimeState === "idle" || runtimeState === "loading";
   const hasError = runtimeState === "error";

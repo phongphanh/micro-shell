@@ -1,4 +1,5 @@
 import type { MiniAppConfig } from "./appRegistry";
+import type { ShellBridge } from "./shellBridge";
 import type { ShellUser } from "./shellUser";
 
 export type MiniAppLaunchProps = {
@@ -11,6 +12,11 @@ export type MiniAppLaunchProps = {
   token: string;
   correlationId: string;
   returnUrl: string;
+  layoutContext: {
+    navigationOwner: "shell";
+    sidebarMode: "host-rendered";
+  };
+  shellBridge?: ShellBridge;
 };
 
 function createCorrelationId() {
@@ -24,7 +30,8 @@ function createCorrelationId() {
 export function createMiniAppLaunchProps(
   app: MiniAppConfig,
   user?: ShellUser | null,
-  token?: string
+  token?: string,
+  shellBridge?: ShellBridge
 ): MiniAppLaunchProps {
   return {
     appCode: app.appCode,
@@ -35,6 +42,11 @@ export function createMiniAppLaunchProps(
     },
     token: token ?? "auth0-sso-context",
     correlationId: createCorrelationId(),
-    returnUrl: "/"
+    returnUrl: "/",
+    layoutContext: {
+      navigationOwner: "shell",
+      sidebarMode: "host-rendered"
+    },
+    shellBridge
   };
 }

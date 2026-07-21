@@ -3,6 +3,7 @@
 import type { MicroApp } from "qiankun";
 import type { MiniAppConfig } from "./appRegistry";
 import { createMiniAppLaunchProps } from "./launchContext";
+import type { ShellBridge } from "./shellBridge";
 import type { ShellUser } from "./shellUser";
 
 export type MiniAppRuntimeState =
@@ -39,10 +40,11 @@ export async function mountMiniApp(
   app: MiniAppConfig,
   user: ShellUser | null,
   token: string | undefined,
+  shellBridge: ShellBridge,
   events: MiniAppRuntimeEvents = {}
 ): Promise<MicroApp> {
   const { loadMicroApp } = await import("qiankun");
-  const launchProps = createMiniAppLaunchProps(app, user, token);
+  const launchProps = createMiniAppLaunchProps(app, user, token, shellBridge);
 
   events.onStateChange?.("loading");
   console.info("[qiankun] loading mini app", {

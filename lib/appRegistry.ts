@@ -1,3 +1,5 @@
+import type { MiniAppNavItem } from "./shellBridge";
+
 export type MiniAppStatus = "ACTIVE" | "INACTIVE";
 
 export type MiniAppConfig = {
@@ -9,6 +11,7 @@ export type MiniAppConfig = {
   status: MiniAppStatus;
   authMode: "SSO_CONTEXT";
   standaloneFallback?: boolean;
+  navItems?: MiniAppNavItem[];
 };
 
 // Mirrors a CMS-driven registry shape so the source can later be replaced by
@@ -21,7 +24,27 @@ export const appRegistry: MiniAppConfig[] = [
     activeRule: "/apps/todo",
     container: "#subapp-container",
     status: "ACTIVE",
-    authMode: "SSO_CONTEXT"
+    authMode: "SSO_CONTEXT",
+    navItems: [
+      {
+        key: "todo-dashboard",
+        label: "Dashboard",
+        path: "/apps/todo",
+        icon: "D"
+      },
+      {
+        key: "todo-tasks",
+        label: "Tasks",
+        path: "/apps/todo/tasks",
+        icon: "T"
+      },
+      {
+        key: "todo-weather",
+        label: "Weather",
+        path: "/apps/todo/weather",
+        icon: "W"
+      }
+    ]
   }
 ];
 
