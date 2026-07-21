@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
+import { AuthGate } from "@/components/AuthGate";
+import { AuthActions } from "@/components/AuthActions";
 
 const menuItems = [
   { href: "/", label: "Dashboard", icon: "D" },
@@ -24,7 +26,7 @@ export function ShellLayout({ children }: { children: ReactNode }) {
             <span>Qiankun micro frontend host</span>
           </div>
         </div>
-        <div className="shell-user">demo-user · demo-org</div>
+        <AuthActions />
       </header>
 
       <div className="shell-body">
@@ -53,7 +55,9 @@ export function ShellLayout({ children }: { children: ReactNode }) {
           </nav>
         </aside>
 
-        <main className="shell-main">{children}</main>
+        <main className="shell-main">
+          <AuthGate>{children}</AuthGate>
+        </main>
       </div>
     </div>
   );

@@ -40,6 +40,10 @@ select {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 .shell {
   min-height: 100vh;
   display: grid;
@@ -92,6 +96,141 @@ select {
 .shell-user {
   color: var(--shell-muted);
   font-size: 13px;
+}
+
+.auth-actions {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.auth-actions .shell-user {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+.auth-actions .shell-user strong {
+  color: var(--shell-text);
+  font-size: 13px;
+}
+
+.auth-actions .shell-user span {
+  color: var(--shell-muted);
+}
+
+.auth-button,
+.login-button {
+  align-items: center;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 750;
+  justify-content: center;
+}
+
+.auth-button {
+  background: var(--shell-panel);
+  color: #33445c;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.auth-button-primary,
+.login-button {
+  background: var(--shell-accent);
+  border-color: var(--shell-accent);
+  color: #fff;
+}
+
+.login-page {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  padding: 48px 16px;
+}
+
+.login-panel {
+  background: var(--shell-panel);
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 28px;
+  margin: 0 auto;
+  max-width: 520px;
+  padding: 32px;
+  width: 100%;
+}
+
+.login-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.login-copy h1 {
+  font-size: 32px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.login-copy p,
+.login-help {
+  color: var(--shell-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.login-button {
+  min-height: 46px;
+  padding: 0 18px;
+}
+
+.login-button-secondary {
+  background: var(--shell-panel);
+  border-color: var(--shell-border);
+  color: var(--shell-text);
+}
+
+.login-buttons {
+  display: grid;
+  gap: 10px;
+}
+
+.login-help {
+  font-size: 13px;
+}
+
+.login-config-warning,
+.auth-loading,
+.auth-error {
+  background: #fff8df;
+  border: 1px solid #ead48a;
+  border-radius: 8px;
+  color: #725a10;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+  padding: 13px 14px;
+}
+
+.auth-loading {
+  background: var(--shell-panel);
+  border-color: var(--shell-border);
+  color: var(--shell-muted);
+}
+
+.auth-error {
+  background: #ffecec;
+  border-color: #f0b8b8;
+  color: var(--shell-danger);
+}
+
+.login-help code {
+  background: #edf2f8;
+  border-radius: 6px;
+  color: #33445c;
+  padding: 2px 5px;
 }
 
 .shell-body {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import type { MicroApp } from "qiankun";
 import { getMiniAppByCode } from "@/lib/appRegistry";
 import {
@@ -8,8 +9,11 @@ import {
   mountMiniApp,
   type MiniAppRuntimeState
 } from "@/lib/qiankunRuntime";
+import { toShellUser } from "@/lib/shellUser";
 
 export function MiniAppViewport({ appCode }: { appCode: string }) {
+  const { getAccessTokenSilently, user: auth0User } = useAuth0();
+  const user = useMemo(() => toShellUser(auth0User), [auth0User]);
   const app = getMiniAppByCode(appCode);
   const microAppRef = useRef<MicroApp | null>(null);
   const [runtimeState, setRuntimeState] =
@@ -52,18 +56,28 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
 
         // Props are passed through Qiankun's mount channel to keep launch tokens
         // out of the address bar and browser history.
-        const microApp = await mountMiniApp(registeredApp, {
-          onStateChange: (state) => {
-            if (!disposed) {
-              setRuntimeState(state);
-            }
-          },
-          onError: (error) => {
-            if (!disposed) {
-              handleRuntimeError(error);
+        const token = await getAccessTokenSilently().catch((error) => {
+          console.warn("[auth0] access token unavailable for mini app", error);
+          return undefined;
+        });
+
+        const microApp = await mountMiniApp(
+          registeredApp,
+          user,
+          token,
+          {
+            onStateChange: (state) => {
+              if (!disposed) {
+                setRuntimeState(state);
+              }
+            },
+            onError: (error) => {
+              if (!disposed) {
+                handleRuntimeError(error);
+              }
             }
           }
-        });
+        );
 
         if (disposed) {
           await microApp.unmount();
@@ -94,7 +108,7 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
         );
       microAppRef.current = null;
     };
-  }, [app, appCode]);
+  }, [app, appCode, getAccessTokenSilently, user]);
 
   const isLoading = runtimeState === "idle" || runtimeState === "loading";
   const hasError = runtimeState === "error";

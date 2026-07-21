@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ShellLayout } from "@/components/ShellLayout";
+import { AppFrame } from "@/components/AppFrame";
+import { Auth0Provider } from "@/components/Auth0Provider";
 
 export const metadata: Metadata = {
   title: "Super Web Shell PoC",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ShellLayout>{children}</ShellLayout>
+        <Auth0Provider>
+          <AppFrame>{children}</AppFrame>
+        </Auth0Provider>
       </body>
     </html>
   );

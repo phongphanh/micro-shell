@@ -1,4 +1,5 @@
 import type { MiniAppConfig } from "./appRegistry";
+import type { ShellUser } from "./shellUser";
 
 export type MiniAppLaunchProps = {
   appCode: string;
@@ -21,16 +22,18 @@ function createCorrelationId() {
 }
 
 export function createMiniAppLaunchProps(
-  app: MiniAppConfig
+  app: MiniAppConfig,
+  user?: ShellUser | null,
+  token?: string
 ): MiniAppLaunchProps {
   return {
     appCode: app.appCode,
     userContext: {
-      userId: "demo-user",
-      orgId: "demo-org",
-      roles: ["admin"]
+      userId: user?.userId ?? "anonymous-user",
+      orgId: user?.orgId ?? "unknown-org",
+      roles: user?.roles ?? []
     },
-    token: "demo-launch-token",
+    token: token ?? "auth0-sso-context",
     correlationId: createCorrelationId(),
     returnUrl: "/"
   };
