@@ -29,6 +29,10 @@ export function ShellNavigationProvider({
 
   const setNavItems = useCallback(
     (appCode: string, navItems: MiniAppNavItem[]) => {
+      if (!navItems.length) {
+        return;
+      }
+
       setMiniAppNavItems((current) => {
         if (areNavItemsEqual(current[appCode], navItems)) {
           return current;

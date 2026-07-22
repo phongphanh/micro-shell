@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import { AlertCircle, Loader2, MonitorCog } from "lucide-react";
 import type { MicroApp } from "qiankun";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { getMiniAppByCode } from "@/lib/appRegistry";
 import {
   ensureQiankunErrorHandler,
@@ -163,51 +172,76 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
   const hasError = runtimeState === "error";
 
   return (
-    <>
-      <section className="page-heading">
-        <h1>{app?.name ?? "Mini app"}</h1>
-        <p>
+    <div className="grid gap-6">
+      <section className="grid gap-2">
+        <Badge className="w-fit" variant={hasError ? "destructive" : "secondary"}>
+          {hasError ? <AlertCircle /> : <MonitorCog />}
+          {app?.appCode ?? appCode}
+        </Badge>
+        <h1 className="text-2xl font-semibold tracking-normal md:text-3xl">
+          {app?.name ?? "Mini app"}
+        </h1>
+        <p className="max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
           This route is rendered by the shell while Qiankun mounts the remote
           mini app into the dedicated container below.
         </p>
       </section>
 
-      <section className="status-panel">
-        <div className="miniapp-toolbar">
-          <strong>{app?.appCode ?? appCode}</strong>
-          <span
-            className={`status-pill${hasError ? " status-pill-error" : ""}`}
-          >
-            {hasError ? "Load failed" : runtimeState}
-          </span>
-        </div>
-
-        <div className="miniapp-frame">
-          <div id="subapp-container" />
+      <Card className="min-h-[700px]">
+        <CardHeader className="border-b">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="grid gap-1">
+              <CardTitle>{app?.appCode ?? appCode}</CardTitle>
+              <CardDescription>Remote application mount point</CardDescription>
+            </div>
+            <Badge variant={hasError ? "destructive" : "outline"}>
+              {isLoading ? <Loader2 className="animate-spin" /> : null}
+              {hasError ? "Load failed" : runtimeState}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="relative min-h-[620px] overflow-hidden">
+          <div id="subapp-container" className="min-h-[620px] w-full" />
 
           {isLoading ? (
-            <div className="miniapp-overlay" role="status">
-              <div className="miniapp-message">
-                <strong>Loading {app?.name ?? "mini app"}</strong>
-                <span>Preparing the mini app runtime and launch context.</span>
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center bg-card/95 p-6"
+              role="status"
+            >
+              <div className="grid max-w-md justify-items-center gap-3 text-center">
+                <Loader2 className="size-6 animate-spin text-primary" />
+                <strong className="text-base">
+                  Loading {app?.name ?? "mini app"}
+                </strong>
+                <span className="text-sm leading-6 text-muted-foreground">
+                  Preparing the mini app runtime and launch context.
+                </span>
               </div>
             </div>
           ) : null}
 
           {hasError ? (
-            <div className="miniapp-overlay" role="alert">
-              <div className="miniapp-message">
-                <strong>{app?.name ?? "Mini app"} could not be loaded</strong>
-                <span>
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center bg-card/95 p-6"
+              role="alert"
+            >
+              <div className="grid max-w-md justify-items-center gap-3 text-center">
+                <AlertCircle className="size-6 text-destructive" />
+                <strong className="text-base">
+                  {app?.name ?? "Mini app"} could not be loaded
+                </strong>
+                <span className="text-sm leading-6 text-muted-foreground">
                   {errorMessage ??
                     "The shell caught a Qiankun lifecycle error while mounting the mini app."}
                 </span>
               </div>
             </div>
           ) : null}
-        </div>
-      </section>
-    </>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

@@ -1,0 +1,260 @@
+.shellRoot {
+  --shell-sidebar-width: 17rem;
+  --shell-sidebar-collapsed-width: 3.5rem;
+  display: grid;
+  grid-template-columns: var(--shell-sidebar-width) minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.shellRootCollapsed {
+  grid-template-columns: var(--shell-sidebar-collapsed-width) minmax(0, 1fr);
+}
+
+.sidebar {
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  color: var(--sidebar-foreground);
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.sidebarHeader {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.brandLink,
+.navLink,
+.navButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.625rem;
+  min-width: 0;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.brandLink {
+  border-radius: var(--radius);
+  min-height: 3rem;
+  padding: 0.375rem;
+}
+
+.brandMark {
+  align-items: center;
+  background: var(--sidebar-primary);
+  border-radius: var(--radius);
+  color: var(--sidebar-primary-foreground);
+  display: inline-flex;
+  flex: 0 0 2.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.brandText,
+.navText {
+  display: grid;
+  min-width: 0;
+}
+
+.brandTitle,
+.brandSubtitle,
+.navText,
+.groupLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brandTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.brandSubtitle {
+  color: color-mix(in srgb, var(--sidebar-foreground) 70%, transparent);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.separator {
+  background: var(--sidebar-border);
+  height: 1px;
+  margin: 0 0.75rem;
+}
+
+.sidebarContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.groupLabel {
+  color: color-mix(in srgb, var(--sidebar-foreground) 70%, transparent);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1rem;
+  margin: 0 0 0.375rem;
+  padding: 0 0.5rem;
+}
+
+.navList {
+  display: grid;
+  gap: 0.125rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navLink,
+.navButton {
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 2.25rem;
+  padding: 0.5rem;
+}
+
+.navLink:hover,
+.navButton:hover,
+.navActive {
+  background: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
+
+.navIcon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 1rem;
+  height: 1rem;
+  justify-content: center;
+  width: 1rem;
+}
+
+.navIcon svg,
+.headerIcon svg {
+  display: block;
+  height: 1rem;
+  width: 1rem;
+}
+
+.collapsed .brandText,
+.collapsed .groupLabel,
+.collapsed .navText {
+  display: none;
+}
+
+.collapsed .brandLink,
+.collapsed .navLink,
+.collapsed .navButton {
+  justify-content: center;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.header {
+  align-items: center;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  height: 3.5rem;
+  padding: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--foreground);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 2rem;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.trigger:hover {
+  background: var(--muted);
+}
+
+.headerSeparator {
+  align-self: center;
+  background: var(--border);
+  height: 1.25rem;
+  width: 1px;
+}
+
+.headerTitle {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.headerTitle strong,
+.headerTitle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerTitle strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.headerTitle span {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .main {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .shellRoot,
+  .shellRootCollapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}
