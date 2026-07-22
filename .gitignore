@@ -3,11 +3,13 @@ node_modules/
 
 # Next.js
 .next/
+.open-next/
 out/
 
 # Production builds
 dist/
 build/
+.wrangler/
 
 # Logs
 *.log

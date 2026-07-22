@@ -5,14 +5,17 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "pages:build": "next build",
-    "pages:deploy": "pnpm run pages:build && pnpm dlx wrangler pages deploy out",
+    "worker:build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
+    "preview": "pnpm run worker:build && opennextjs-cloudflare preview",
+    "deploy": "pnpm run worker:build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.22.0",
     "@base-ui/react": "^1.6.0",
+    "@opennextjs/cloudflare": "^1.20.1",
     "@types/node": "^20.19.9",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
@@ -33,6 +36,7 @@
     "eslint-config-next": "^14.2.30",
     "postcss": "^8.5.20",
     "shadcn": "^4.13.1",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "wrangler": "^4.112.0"
   }
 }
