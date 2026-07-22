@@ -6,13 +6,19 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState
 } from "react";
 import type { MiniAppNavItem, ShellBridge } from "@/lib/shellBridge";
 
 type ShellNavigationContextValue = {
   getNavItems: (appCode: string) => MiniAppNavItem[] | undefined;
+  registerMiniAppUnmount: (
+    appCode: string,
+    handler: () => Promise<void>
+  ) => () => void;
   shellBridge: ShellBridge;
+  unmountMiniApp: (appCode: string) => Promise<void>;
 };
 
 const ShellNavigationContext =
@@ -26,6 +32,7 @@ export function ShellNavigationProvider({
   const [miniAppNavItems, setMiniAppNavItems] = useState<
     Record<string, MiniAppNavItem[]>
   >({});
+  const unmountHandlersRef = useRef<Record<string, () => Promise<void>>>({});
 
   const setNavItems = useCallback(
     (appCode: string, navItems: MiniAppNavItem[]) => {
@@ -57,6 +64,23 @@ export function ShellNavigationProvider({
     [miniAppNavItems]
   );
 
+  const registerMiniAppUnmount = useCallback(
+    (appCode: string, handler: () => Promise<void>) => {
+      unmountHandlersRef.current[appCode] = handler;
+
+      return () => {
+        if (unmountHandlersRef.current[appCode] === handler) {
+          delete unmountHandlersRef.current[appCode];
+        }
+      };
+    },
+    []
+  );
+
+  const unmountMiniApp = useCallback(async (appCode: string) => {
+    await unmountHandlersRef.current[appCode]?.();
+  }, []);
+
   const shellBridge = useMemo(
     () => ({
       setNavItems,
@@ -68,9 +92,11 @@ export function ShellNavigationProvider({
   const value = useMemo<ShellNavigationContextValue>(
     () => ({
       getNavItems,
-      shellBridge
+      registerMiniAppUnmount,
+      shellBridge,
+      unmountMiniApp
     }),
-    [getNavItems, shellBridge]
+    [getNavItems, registerMiniAppUnmount, shellBridge, unmountMiniApp]
   );
 
   return (

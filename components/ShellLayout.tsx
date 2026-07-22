@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  type MouseEvent,
   type ReactNode,
   useEffect,
   useState,
@@ -94,21 +92,25 @@ export function ShellLayout({ children }: { children: ReactNode }) {
 
 function ShellLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const activeMiniApp = matchMiniAppByPath(pathname);
   const activeMiniAppCode = activeMiniApp?.appCode;
-  const { getNavItems } = useShellNavigation();
+  const { getNavItems, unmountMiniApp } = useShellNavigation();
   const [sidebarScope, setSidebarScope] = useState<"shell" | "mini">("shell");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const shouldShowMiniNav = Boolean(activeMiniApp && sidebarScope === "mini");
   const miniAppPublishedNavItems = activeMiniApp
     ? getNavItems(activeMiniApp.appCode)
     : undefined;
-  const miniAppNavItems =
-    miniAppPublishedNavItems?.length
-      ? miniAppPublishedNavItems
-      : (activeMiniApp?.navItems ?? []);
+
+  const miniAppNavItems = activeMiniApp
+    ? (miniAppPublishedNavItems ?? []).map((item) =>
+        normalizeMiniAppNavItem(item, activeMiniApp.activeRule),
+      )
+    : [];
   const navItems =
     shouldShowMiniNav && activeMiniApp ? miniAppNavItems : shellMenuItems;
+
   const sidebarLabel =
     shouldShowMiniNav && activeMiniApp
       ? `${activeMiniApp.name} navigation`
@@ -121,14 +123,47 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
     }
   }, [activeMiniAppCode]);
 
-  function handleShellNavClick(
-    event: MouseEvent<HTMLAnchorElement>,
-    item: MiniAppNavItem,
-  ) {
+  function handleShellNavClick(item: MiniAppNavItem) {
     if (activeMiniApp && item.path === activeMiniApp.activeRule) {
-      event.preventDefault();
       setSidebarScope("mini");
+      return;
     }
+
+    void navigateToNavItem(item.path);
+  }
+
+  async function navigateToNavItem(path: string) {
+    if (path === pathname) {
+      return;
+    }
+
+    if (path.startsWith("#") && typeof window !== "undefined") {
+      window.location.hash = path;
+      return;
+    }
+
+    if (/^[a-z][a-z\d+.-]*:/i.test(path) && typeof window !== "undefined") {
+      window.location.assign(path);
+      return;
+    }
+
+    const targetMiniApp = matchMiniAppByPath(path);
+    const shouldUnmountActiveMiniApp =
+      activeMiniApp &&
+      (!targetMiniApp || targetMiniApp.appCode !== activeMiniApp.appCode);
+
+    if (shouldUnmountActiveMiniApp) {
+      try {
+        await unmountMiniApp(activeMiniApp.appCode);
+      } catch (error) {
+        console.error(
+          "[shell] failed to unmount mini app before navigation",
+          error,
+        );
+      }
+    }
+
+    router.push(path);
   }
 
   return (
@@ -143,23 +178,23 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
         className={cn(styles.sidebar, !isSidebarOpen && styles.collapsed)}
       >
         <div className={styles.sidebarHeader}>
-          <Link className={styles.brandLink} href="/" title="Super Web Shell">
+          <button
+            className={styles.brandLink}
+            onClick={() => void navigateToNavItem("/")}
+            title="Super Web Shell"
+            type="button"
+          >
             <span className={styles.brandMark}>SW</span>
             <span className={styles.brandText}>
               <span className={styles.brandTitle}>Super Web Shell</span>
               <span className={styles.brandSubtitle}>Qiankun host</span>
             </span>
-          </Link>
+          </button>
         </div>
 
         <div className={styles.separator} />
 
         <nav className={styles.sidebarContent}>
-          <div className={styles.groupLabel}>
-            {shouldShowMiniNav && activeMiniApp
-              ? activeMiniApp.name
-              : "Workspace"}
-          </div>
           <ul className={styles.navList}>
             {shouldShowMiniNav && activeMiniApp ? (
               <li>
@@ -188,22 +223,25 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
 
               return (
                 <li key={item.key}>
-                  <Link
+                  <button
                     aria-current={isActive ? "page" : undefined}
                     className={cn(styles.navLink, isActive && styles.navActive)}
-                    href={item.path}
-                    onClick={
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+
                       shouldShowMiniNav
-                        ? undefined
-                        : (event) => handleShellNavClick(event, item)
-                    }
+                        ? void navigateToNavItem(item.path)
+                        : handleShellNavClick(item);
+                    }}
                     title={item.label}
+                    type="button"
                   >
                     <span className={styles.navIcon}>
                       <Icon />
                     </span>
                     <span className={styles.navText}>{item.label}</span>
-                  </Link>
+                  </button>
                 </li>
               );
             })}
@@ -268,4 +306,36 @@ function isActiveNavItem(
   return shouldMatchExactly
     ? pathname === item.path
     : pathname === item.path || pathname.startsWith(`${item.path}/`);
+}
+
+function normalizeMiniAppNavItem(
+  item: MiniAppNavItem,
+  miniAppRoot: string,
+): MiniAppNavItem {
+  return {
+    ...item,
+    path: normalizeMiniAppPath(item.path, miniAppRoot),
+  };
+}
+
+function normalizeMiniAppPath(path: string, miniAppRoot: string) {
+  const trimmedPath = path.trim();
+
+  if (
+    trimmedPath.startsWith("/") ||
+    trimmedPath.startsWith("#") ||
+    /^[a-z][a-z\d+.-]*:/i.test(trimmedPath)
+  ) {
+    return trimmedPath;
+  }
+
+  if (trimmedPath.startsWith("apps/")) {
+    return `/${trimmedPath}`;
+  }
+
+  const normalizedRoot = miniAppRoot.endsWith("/")
+    ? miniAppRoot.slice(0, -1)
+    : miniAppRoot;
+
+  return `${normalizedRoot}/${trimmedPath}`;
 }

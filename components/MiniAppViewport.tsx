@@ -23,7 +23,7 @@ import { useShellNavigation } from "@/components/ShellNavigationContext";
 
 export function MiniAppViewport({ appCode }: { appCode: string }) {
   const { getAccessTokenSilently, user: auth0User } = useAuth0();
-  const { shellBridge } = useShellNavigation();
+  const { registerMiniAppUnmount, shellBridge } = useShellNavigation();
   const user = useMemo(() => toShellUser(auth0User), [auth0User]);
   const app = getMiniAppByCode(appCode);
   const microAppRef = useRef<MicroApp | null>(null);
@@ -31,6 +31,21 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
   const [runtimeState, setRuntimeState] =
     useState<MiniAppRuntimeState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(
+    () =>
+      registerMiniAppUnmount(appCode, async () => {
+        const microApp = microAppRef.current;
+
+        if (!microApp) {
+          return;
+        }
+
+        microAppRef.current = null;
+        await microApp.unmount();
+      }),
+    [appCode, registerMiniAppUnmount]
+  );
 
   useEffect(() => {
     const runId = mountRunIdRef.current + 1;
