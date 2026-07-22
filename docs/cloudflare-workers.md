@@ -15,6 +15,12 @@ pnpm run deploy
 `preview` runs the app in Cloudflare's Workers runtime locally. `deploy` builds
 with OpenNext and publishes the Worker.
 
+For Cloudflare Workers Builds, use:
+
+- Build command: `pnpm run worker:build`
+- Deploy command: `pnpm run worker:deploy`
+- Root directory: `/`
+
 The project currently uses Next.js 14, which OpenNext now treats as unsupported
 by the Next.js team, so `worker:build` includes OpenNext's explicit unsupported
 version flag. Upgrade Next.js before removing that flag.

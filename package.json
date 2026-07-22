@@ -2,12 +2,14 @@
   "name": "super-web-shell-poc",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.11.1",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
     "worker:build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
     "preview": "pnpm run worker:build && opennextjs-cloudflare preview",
     "deploy": "pnpm run worker:build && opennextjs-cloudflare deploy",
+    "worker:deploy": "opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
     "lint": "next lint"
