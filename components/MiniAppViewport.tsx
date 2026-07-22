@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { getMiniAppByCode } from "@/lib/appRegistry";
+import { useAppRegistry } from "@/components/AppRegistryProvider";
 import {
   ensureQiankunErrorHandler,
   mountMiniApp,
@@ -24,6 +24,11 @@ import { useShellNavigation } from "@/components/ShellNavigationContext";
 export function MiniAppViewport({ appCode }: { appCode: string }) {
   const { getAccessTokenSilently, user: auth0User } = useAuth0();
   const { registerMiniAppUnmount, shellBridge } = useShellNavigation();
+  const {
+    error: appRegistryError,
+    getMiniAppByCode,
+    isLoading: isAppRegistryLoading
+  } = useAppRegistry();
   const user = useMemo(() => toShellUser(auth0User), [auth0User]);
   const app = getMiniAppByCode(appCode);
   const microAppRef = useRef<MicroApp | null>(null);
@@ -69,6 +74,12 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
       setRuntimeState("error");
       setErrorMessage(message);
     };
+
+    if (isAppRegistryLoading) {
+      setCurrentRuntimeState("loading");
+      setErrorMessage(null);
+      return;
+    }
 
     if (!app) {
       handleRuntimeError(`Mini app "${appCode}" is not active or registered.`);
@@ -181,9 +192,19 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
         );
       microAppRef.current = null;
     };
-  }, [app, appCode, getAccessTokenSilently, shellBridge, user]);
+  }, [
+    app,
+    appCode,
+    getAccessTokenSilently,
+    isAppRegistryLoading,
+    shellBridge,
+    user
+  ]);
 
-  const isLoading = runtimeState === "idle" || runtimeState === "loading";
+  const isLoading =
+    isAppRegistryLoading ||
+    runtimeState === "idle" ||
+    runtimeState === "loading";
   const hasError = runtimeState === "error";
 
   return (
@@ -247,7 +268,8 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
                   {app?.name ?? "Mini app"} could not be loaded
                 </strong>
                 <span className="text-sm leading-6 text-muted-foreground">
-                  {errorMessage ??
+                  {appRegistryError ??
+                    errorMessage ??
                     "The shell caught a Qiankun lifecycle error while mounting the mini app."}
                 </span>
               </div>

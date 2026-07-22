@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -36,24 +37,16 @@ import {
 import { AuthGate } from "@/components/AuthGate";
 import { AuthActions } from "@/components/AuthActions";
 import {
+  AppRegistryProvider,
+  useAppRegistry,
+} from "@/components/AppRegistryProvider";
+import {
   ShellNavigationProvider,
   useShellNavigation,
 } from "@/components/ShellNavigationContext";
-import { matchMiniAppByPath } from "@/lib/appRegistry";
 import { cn } from "@/lib/utils";
 import type { MiniAppNavItem } from "@/lib/shellBridge";
 import styles from "./ShellLayout.module.css";
-
-const shellMenuItems: MiniAppNavItem[] = [
-  { href: "/", label: "Dashboard", icon: "D" },
-  { href: "/apps/todo", label: "Todo Manager", icon: "T" },
-  { href: "/apps/elog", label: "eLog", icon: "E" },
-].map((item) => ({
-  key: item.href,
-  label: item.label,
-  path: item.href,
-  icon: item.icon,
-}));
 
 const navIconMap: Record<string, LucideIcon> = {
   "/": LayoutDashboard,
@@ -84,21 +77,46 @@ const navIconMap: Record<string, LucideIcon> = {
 
 export function ShellLayout({ children }: { children: ReactNode }) {
   return (
-    <ShellNavigationProvider>
-      <ShellLayoutContent>{children}</ShellLayoutContent>
-    </ShellNavigationProvider>
+    <AppRegistryProvider>
+      <ShellNavigationProvider>
+        <ShellLayoutContent>{children}</ShellLayoutContent>
+      </ShellNavigationProvider>
+    </AppRegistryProvider>
   );
 }
 
 function ShellLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const {
+    error: appRegistryError,
+    isLoading: isAppRegistryLoading,
+    matchMiniAppByPath,
+    miniApps,
+  } = useAppRegistry();
   const activeMiniApp = matchMiniAppByPath(pathname);
   const activeMiniAppCode = activeMiniApp?.appCode;
   const { getNavItems, unmountMiniApp } = useShellNavigation();
   const [sidebarScope, setSidebarScope] = useState<"shell" | "mini">("shell");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const shouldShowMiniNav = Boolean(activeMiniApp && sidebarScope === "mini");
+  const shellMenuItems = useMemo<MiniAppNavItem[]>(
+    () => [
+      {
+        key: "/",
+        label: "Dashboard",
+        path: "/",
+        icon: "D",
+      },
+      ...miniApps.map((app) => ({
+        key: app.activeRule,
+        label: app.name,
+        path: app.activeRule,
+        icon: app.appCode.slice(0, 1).toUpperCase(),
+      })),
+    ],
+    [miniApps],
+  );
   const miniAppPublishedNavItems = activeMiniApp
     ? getNavItems(activeMiniApp.appCode)
     : undefined;
@@ -165,7 +183,6 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
 
     router.push(path);
   }
-
   return (
     <div
       className={cn(
@@ -210,6 +227,21 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
                   <span className={styles.navText}>Shell navigation</span>
                 </button>
               </li>
+            ) : null}
+
+            {!shouldShowMiniNav && isAppRegistryLoading ? (
+              <li className={styles.navStatus}>Loading mini apps...</li>
+            ) : null}
+
+            {!shouldShowMiniNav && appRegistryError ? (
+              <li className={styles.navStatus}>{appRegistryError}</li>
+            ) : null}
+
+            {!shouldShowMiniNav &&
+            !isAppRegistryLoading &&
+            !appRegistryError &&
+            miniApps.length === 0 ? (
+              <li className={styles.navStatus}>No mini apps available</li>
             ) : null}
 
             {navItems.map((item) => {
