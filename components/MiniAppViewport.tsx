@@ -55,13 +55,27 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
     setRuntimeState("loading");
     setErrorMessage(null);
 
-    if (registeredApp.standaloneFallback) {
-      // The deployed Todo app is currently a standalone Vite app. Loading it
-      // through Qiankun executes its host-relative router before lifecycle
-      // validation fails, which can push paths like /tasks into the shell.
-      setCurrentRuntimeState("standalone");
-      return;
-    }
+    const handleUnhandledQiankunError = (event: ErrorEvent) => {
+      if (
+        isReadableStreamClosedError(event.error) ||
+        isReadableStreamClosedError(event.message)
+      ) {
+        event.preventDefault();
+        handleRuntimeError(event.error ?? event.message);
+      }
+    };
+    const handleUnhandledQiankunRejection = (event: PromiseRejectionEvent) => {
+      if (isReadableStreamClosedError(event.reason)) {
+        event.preventDefault();
+        handleRuntimeError(event.reason);
+      }
+    };
+
+    window.addEventListener("error", handleUnhandledQiankunError);
+    window.addEventListener(
+      "unhandledrejection",
+      handleUnhandledQiankunRejection
+    );
 
     async function bootMiniApp() {
       try {
@@ -130,6 +144,11 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
 
     return () => {
       disposed = true;
+      window.removeEventListener("error", handleUnhandledQiankunError);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledQiankunRejection
+      );
       window.clearTimeout(mountedReconcileTimer);
       microAppRef.current
         ?.unmount()
@@ -142,7 +161,6 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
 
   const isLoading = runtimeState === "idle" || runtimeState === "loading";
   const hasError = runtimeState === "error";
-  const isStandalone = runtimeState === "standalone";
 
   return (
     <>
@@ -150,7 +168,7 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
         <h1>{app?.name ?? "Mini app"}</h1>
         <p>
           This route is rendered by the shell while Qiankun mounts the remote
-          Todo Manager into the dedicated container below.
+          mini app into the dedicated container below.
         </p>
       </section>
 
@@ -160,29 +178,17 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
           <span
             className={`status-pill${hasError ? " status-pill-error" : ""}`}
           >
-            {hasError
-              ? "Load failed"
-              : isStandalone
-                ? "standalone"
-                : runtimeState}
+            {hasError ? "Load failed" : runtimeState}
           </span>
         </div>
 
         <div className="miniapp-frame">
-          <div id="subapp-container">
-            {isStandalone && app ? (
-              <iframe
-                className="standalone-miniapp"
-                src={app.entry}
-                title={app.name}
-              />
-            ) : null}
-          </div>
+          <div id="subapp-container" />
 
           {isLoading ? (
             <div className="miniapp-overlay" role="status">
               <div className="miniapp-message">
-                <strong>Loading Todo Manager</strong>
+                <strong>Loading {app?.name ?? "mini app"}</strong>
                 <span>Preparing the mini app runtime and launch context.</span>
               </div>
             </div>
@@ -191,19 +197,12 @@ export function MiniAppViewport({ appCode }: { appCode: string }) {
           {hasError ? (
             <div className="miniapp-overlay" role="alert">
               <div className="miniapp-message">
-                <strong>Todo Manager could not be loaded</strong>
+                <strong>{app?.name ?? "Mini app"} could not be loaded</strong>
                 <span>
                   {errorMessage ??
                     "The shell caught a Qiankun lifecycle error while mounting the mini app."}
                 </span>
               </div>
-            </div>
-          ) : null}
-
-          {isStandalone ? (
-            <div className="miniapp-compat-note" role="status">
-              Rendering the current Todo deployment in standalone compatibility
-              mode until it exports Qiankun lifecycle functions.
             </div>
           ) : null}
         </div>
@@ -222,4 +221,13 @@ function formatError(error: unknown) {
   }
 
   return "Unknown mini app runtime error.";
+}
+
+function isReadableStreamClosedError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes("ReadableStreamDefaultController") &&
+    message.includes("Cannot enqueue a chunk")
+  );
 }

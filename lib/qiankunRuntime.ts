@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+import * as ReactDOMClient from "react-dom/client";
+import * as ReactJSXRuntime from "react/jsx-runtime";
 import type { MicroApp } from "qiankun";
 import type { MiniAppConfig } from "./appRegistry";
 import { createMiniAppLaunchProps } from "./launchContext";
@@ -10,7 +13,6 @@ export type MiniAppRuntimeState =
   | "idle"
   | "loading"
   | "mounted"
-  | "standalone"
   | "error";
 
 export type MiniAppRuntimeEvents = {
@@ -46,6 +48,7 @@ export async function mountMiniApp(
   const { loadMicroApp } = await import("qiankun");
   const launchProps = createMiniAppLaunchProps(app, user, token, shellBridge);
 
+  exposeSharedReactGlobals();
   events.onStateChange?.("loading");
   console.info("[qiankun] loading mini app", {
     appCode: app.appCode,
@@ -61,10 +64,13 @@ export async function mountMiniApp(
       props: launchProps
     },
     {
-      sandbox: {
-        experimentalStyleIsolation: true
-      },
-      singular: true
+      sandbox: app.disableSandbox
+        ? false
+        : {
+            experimentalStyleIsolation: true
+          },
+      singular: true,
+      fetch: createQiankunFetch()
     },
     {
       beforeLoad: [
@@ -97,4 +103,42 @@ export async function mountMiniApp(
       ]
     }
   );
+}
+
+function createQiankunFetch(): typeof window.fetch {
+  return async (input, init) => {
+    const response = await window.fetch(input, init);
+    const contentType = response.headers.get("content-type") ?? "";
+    const shouldNormalizeTextResponse =
+      contentType.includes("text/html") ||
+      contentType.includes("text/css") ||
+      contentType.includes("javascript");
+
+    if (!shouldNormalizeTextResponse) {
+      return response;
+    }
+
+    // Next/Turbopack Pages deployments can expose streamed HTML/script
+    // responses. import-html-entry expects to consume them as plain text while
+    // evaluating the micro app, so normalize the stream into a fresh Response.
+    const body = await response.text();
+
+    return new Response(body, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText
+    });
+  };
+}
+
+function exposeSharedReactGlobals() {
+  const sharedGlobal = window as typeof window & {
+    React?: typeof React;
+    ReactDOMClient?: typeof ReactDOMClient;
+    ReactJSXRuntime?: typeof ReactJSXRuntime;
+  };
+
+  sharedGlobal.React ??= React;
+  sharedGlobal.ReactDOMClient ??= ReactDOMClient;
+  sharedGlobal.ReactJSXRuntime ??= ReactJSXRuntime;
 }

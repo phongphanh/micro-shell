@@ -12,6 +12,7 @@ export type MiniAppLaunchProps = {
   token: string;
   correlationId: string;
   returnUrl: string;
+  assetBaseUrl?: string;
   layoutContext: {
     navigationOwner: "shell";
     sidebarMode: "host-rendered";
@@ -43,6 +44,7 @@ export function createMiniAppLaunchProps(
     token: token ?? "auth0-sso-context",
     correlationId: createCorrelationId(),
     returnUrl: "/",
+    assetBaseUrl: app.assetBaseUrl,
     layoutContext: {
       navigationOwner: "shell",
       sidebarMode: "host-rendered"

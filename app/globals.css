@@ -253,13 +253,13 @@ button {
 .shell-sidebar-context {
   align-items: center;
   color: #33445c;
-  display: grid;
   font-size: 14px;
   font-weight: 750;
   gap: 8px;
-  grid-template-columns: 32px minmax(0, 1fr);
   margin-bottom: 12px;
   min-height: 36px;
+  display: flex;
+  width: 100%;
 }
 
 .shell-sidebar-context span:last-child {
@@ -277,9 +277,9 @@ button {
   display: inline-flex;
   font-size: 18px;
   height: 32px;
-  justify-content: center;
-  padding: 0;
-  width: 32px;
+  gap: 4px;
+  padding: 4px;
+  width: 100%;
 }
 
 .sidebar-back-button:hover {
@@ -407,28 +407,6 @@ button {
 #subapp-container {
   min-height: 620px;
   width: 100%;
-}
-
-.standalone-miniapp {
-  border: 0;
-  display: block;
-  min-height: 620px;
-  width: 100%;
-}
-
-.miniapp-compat-note {
-  background: #fff8df;
-  border: 1px solid #ead48a;
-  border-radius: 8px;
-  bottom: 14px;
-  color: #725a10;
-  font-size: 12px;
-  font-weight: 650;
-  left: 14px;
-  max-width: min(520px, calc(100% - 28px));
-  padding: 9px 11px;
-  position: absolute;
-  z-index: 11;
 }
 
 .miniapp-overlay {

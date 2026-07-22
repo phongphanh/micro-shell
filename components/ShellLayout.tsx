@@ -7,19 +7,20 @@ import { AuthGate } from "@/components/AuthGate";
 import { AuthActions } from "@/components/AuthActions";
 import {
   ShellNavigationProvider,
-  useShellNavigation
+  useShellNavigation,
 } from "@/components/ShellNavigationContext";
 import { matchMiniAppByPath } from "@/lib/appRegistry";
 import type { MiniAppNavItem } from "@/lib/shellBridge";
 
 const shellMenuItems: MiniAppNavItem[] = [
   { href: "/", label: "Dashboard", icon: "D" },
-  { href: "/apps/todo", label: "Todo Manager", icon: "T" }
+  { href: "/apps/todo", label: "Todo Manager", icon: "T" },
+  { href: "/apps/elog", label: "eLog", icon: "E" },
 ].map((item) => ({
   key: item.href,
   label: item.label,
   path: item.href,
-  icon: item.icon
+  icon: item.icon,
 }));
 
 export function ShellLayout({ children }: { children: ReactNode }) {
@@ -37,12 +38,14 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
   const { getNavItems } = useShellNavigation();
   const [sidebarScope, setSidebarScope] = useState<"shell" | "mini">("shell");
   const shouldShowMiniNav = Boolean(activeMiniApp && sidebarScope === "mini");
-  const navItems = shouldShowMiniNav && activeMiniApp
-    ? (getNavItems(activeMiniApp.appCode) ?? activeMiniApp.navItems ?? [])
-    : shellMenuItems;
-  const sidebarLabel = shouldShowMiniNav && activeMiniApp
-    ? `${activeMiniApp.name} navigation`
-    : "Shell navigation";
+  const navItems =
+    shouldShowMiniNav && activeMiniApp
+      ? (getNavItems(activeMiniApp.appCode) ?? activeMiniApp.navItems ?? [])
+      : shellMenuItems;
+  const sidebarLabel =
+    shouldShowMiniNav && activeMiniApp
+      ? `${activeMiniApp.name} navigation`
+      : "Shell navigation";
 
   useEffect(() => {
     setSidebarScope(activeMiniAppCode ? "mini" : "shell");
@@ -50,7 +53,7 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
 
   function handleShellNavClick(
     event: MouseEvent<HTMLAnchorElement>,
-    item: MiniAppNavItem
+    item: MiniAppNavItem,
   ) {
     if (activeMiniApp && item.path === activeMiniApp.activeRule) {
       event.preventDefault();
@@ -83,9 +86,9 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
                 onClick={() => setSidebarScope("shell")}
                 type="button"
               >
-                <span aria-hidden="true">&lt;</span>
+                <span aria-hidden="true" className="flex w-7 h-7">&lt;</span>
+                <span className="flex">{activeMiniApp.name}</span>
               </button>
-              <span>{activeMiniApp.name}</span>
             </div>
           ) : null}
 
@@ -95,7 +98,7 @@ function ShellLayoutContent({ children }: { children: ReactNode }) {
                 item,
                 pathname,
                 shouldShowMiniNav,
-                activeMiniApp?.activeRule
+                activeMiniApp?.activeRule,
               );
 
               return (
@@ -132,7 +135,7 @@ function isActiveNavItem(
   item: MiniAppNavItem,
   pathname: string,
   isMiniNav: boolean,
-  miniAppRoot?: string
+  miniAppRoot?: string,
 ) {
   const shouldMatchExactly =
     item.path === "/" || (isMiniNav && item.path === miniAppRoot);
