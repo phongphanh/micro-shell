@@ -7,9 +7,13 @@ import { ShellLayout } from "@/components/ShellLayout";
 export function AppFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
+  if (normalizePathname(pathname) === "/login") {
     return <>{children}</>;
   }
 
   return <ShellLayout>{children}</ShellLayout>;
+}
+
+function normalizePathname(pathname: string) {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
 }

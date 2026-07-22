@@ -127,5 +127,11 @@ function normalizeReturnTo(returnTo?: string | null) {
     return "/";
   }
 
+  const normalizedPath = returnTo.split(/[?#]/, 1)[0]?.replace(/\/+$/, "");
+
+  if (normalizedPath === "/login") {
+    return "/";
+  }
+
   return returnTo;
 }

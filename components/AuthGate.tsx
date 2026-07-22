@@ -10,7 +10,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const isLoginRoute = pathname === "/login";
+  const isLoginRoute = normalizePathname(pathname) === "/login";
 
   useEffect(() => {
     if (isLoading || isAuthenticated || isLoginRoute) {
@@ -43,6 +43,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function normalizePathname(pathname: string) {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
 }
 
 function AuthStatusMessage({ message }: { message: string }) {
